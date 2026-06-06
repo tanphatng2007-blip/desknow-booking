@@ -2,33 +2,29 @@
 <body class="bg-light p-5">
     <div class="d-flex justify-content-between align-items-center">
         <h2>⚡ Admin Dashboard</h2>
-        <a href="/" class="btn btn-outline-dark">Trang chủ</a>
+        <div>
+            <a href="/admin/history" class="btn btn-info">Xem lịch sử</a>
+            <a href="/" class="btn btn-outline-dark">Trang chủ</a>
+        </div>
     </div>
     
     <div class="card p-4 mt-3 shadow-sm">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Khách</th>
-                    <th>Loại phòng</th>
-                    <th>Số bàn</th>
-                    <th>Thời gian</th>
-                    <th>Thành tiền</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+        <h5>Đơn chờ duyệt</h5>
+        <table class="table table-hover">
+            <thead class="table-dark"><tr><th>Khách</th><th>Bàn</th><th>Thời gian</th><th>Action</th></tr></thead>
             <tbody>
-                {% for b in bookings if b.status == 'pending' %}
-                <tr>
-                    <td>{{ b.name }}</td>
-                    <td><span class="badge bg-info text-dark">{{ b.room_type|capitalize }}</span></td>
-                    <td><strong>{{ b.table }}</strong></td>
-                    <td>{{ b.date }} | {{ b.time }}</td>
-                    <td>{{ b.price }} VNĐ</td>
-                    <td>
-                        <a href="/confirm/{{ b.id }}" class="btn btn-success btn-sm">Duyệt Đơn</a>
-                    </td>
-                </tr>
+                {% for b in pending %}
+                <tr><td>{{ b.name }}</td><td>{{ b.table }}</td><td>{{ b.date }}</td><td>Chờ thanh toán</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <h5 class="mt-4">Đơn đã xác nhận (Đang sử dụng)</h5>
+        <table class="table table-hover">
+            <thead class="table-success"><tr><th>Khách</th><th>Bàn</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for b in confirmed %}
+                <tr><td>{{ b.name }}</td><td>{{ b.table }}</td><td><a href="/admin/checkout/{{ b.id }}" class="btn btn-warning btn-sm">Check-out</a></td></tr>
                 {% endfor %}
             </tbody>
         </table>
