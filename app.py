@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 app = Flask(__name__)
 app.secret_key = 'desknow_secret_key'
 
+# Lưu ý: Các biến này lưu trên RAM, khi deploy lại web sẽ mất dữ liệu. 
 pending_bookings = []
 confirmed_bookings = []
 
@@ -19,6 +20,7 @@ def index():
         date = request.form['date']
         time = request.form['time']
         
+        # Kiểm tra phòng trống
         available_table = None
         if room_type == 'public':
             available_table = 'Public'
@@ -41,7 +43,7 @@ def index():
             'time': time,
             'table': available_table,
             'room_type': room_type,
-            'price': {'public': 10000, 'private': 15000, 'couple': 25000}[room_type] * int(request.form['hours']),
+            'price': {'public': 10000, 'private': 15000, 'couple': 25000}[room_type] * int(request.form.get('hours', 1)),
             'status': 'pending'
         }
         pending_bookings.append(booking)
@@ -50,32 +52,36 @@ def index():
 
 @app.route('/webhook-bank', methods=['POST'])
 def webhook_bank():
+    # In dữ liệu nhận được ra log của Render để debug
     data = request.json
-    # Giả sử dịch vụ trung gian gửi nội dung chuyển khoản trong khóa 'content'
+    print(f"DEBUG - Webhook data received: {data}")
+    
+    if not data:
+        return jsonify({'status': 'error', 'message': 'Empty JSON'}), 400
+
     content = data.get('content', '')
     
+    # Kiểm tra đơn hàng khớp với nội dung chuyển khoản
+    found = False
     for b in pending_bookings:
-        # Kiểm tra cú pháp "DeskNow + Tên" trong nội dung chuyển khoản
+        # So khớp nội dung: "DeskNow [Tên]"
         if f"DeskNow {b['name']}".lower() in content.lower():
             b['status'] = 'confirmed'
             confirmed_bookings.append(b)
             pending_bookings.remove(b)
-            return jsonify({'status': 'success'}), 200
-    return jsonify({'status': 'not found'}), 404
+            print(f"DEBUG - Booking {b['id']} confirmed successfully!")
+            found = True
+            break
+            
+    if found:
+        return jsonify({'status': 'success'}), 200
+    else:
+        print(f"DEBUG - No matching booking found for content: {content}")
+        return jsonify({'status': 'not found'}), 404
 
 @app.route('/admin')
 def admin():
     return render_template('admin.html', bookings=pending_bookings)
-
-@app.route('/confirm/<int:booking_id>')
-def confirm_booking(booking_id):
-    for b in pending_bookings:
-        if b['id'] == booking_id:
-            b['status'] = 'confirmed'
-            confirmed_bookings.append(b)
-            pending_bookings.remove(b)
-            break
-    return redirect(url_for('admin'))
 
 @app.route('/check-status/<int:booking_id>')
 def check_status(booking_id):
