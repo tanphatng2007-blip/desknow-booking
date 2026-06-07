@@ -31,8 +31,7 @@ def index():
                     available_table = table
                     break
         
-        if not available_table:
-            return render_template('full.html')
+        if not available_table: return render_template('full.html')
 
         booking = {
             'id': len(pending_bookings) + len(confirmed_bookings),
@@ -50,11 +49,21 @@ def index():
         return render_template('payment.html', data=booking)
     return render_template('index.html')
 
+@app.route('/confirm/<int:booking_id>')
+def confirm_booking(booking_id):
+    for b in pending_bookings:
+        if b['id'] == booking_id:
+            b['status'] = 'confirmed'
+            b['confirmed_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            confirmed_bookings.append(b)
+            pending_bookings.remove(b)
+            break
+    return "Đã duyệt đơn! <a href='/admin'>Quay lại</a>"
+
 @app.route('/webhook-bank', methods=['POST'])
 def webhook_bank():
     data = request.json
     if not data: return jsonify({'status': 'error'}), 400
-    
     content = data.get('content', '')
     for b in pending_bookings:
         if f"DeskNow {b['name']}".lower() in content.lower():
@@ -73,7 +82,12 @@ def cancel_booking(booking_id):
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html', bookings=pending_bookings)
+    # Hiển thị cả danh sách chờ và danh sách đã xác nhận
+    return render_template('admin.html', bookings=pending_bookings + confirmed_bookings)
+
+@app.route('/history')
+def history():
+    return render_template('history.html', history=confirmed_bookings)
 
 @app.route('/check-status/<int:booking_id>')
 def check_status(booking_id):
