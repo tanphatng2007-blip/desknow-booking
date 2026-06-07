@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
 app.secret_key = 'desknow_secret_key'
+
+# Cấu hình múi giờ Việt Nam (UTC+7)
+ICT = timezone(timedelta(hours=7))
 
 # Lưu trữ dữ liệu
 pending_bookings = []
@@ -38,12 +41,12 @@ def index():
         if not available_table:
             return render_template('full.html')
 
-        # Xử lý thời gian
         booking_dt = datetime.strptime(f"{date} {time}", '%Y-%m-%d %H:%M')
         
         booking = {
             'id': len(pending_bookings) + len(confirmed_bookings) + len(history_bookings),
             'name': request.form['name'],
+            'phone': request.form['phone'], # Đã thêm SĐT
             'email': request.form['email'],
             'date': date,
             'time': time,
@@ -54,7 +57,7 @@ def index():
             'room_type': room_type,
             'price': {'public': 10000, 'private': 15000, 'couple': 25000}[room_type] * hours,
             'status': 'pending',
-            'created_at': datetime.now().timestamp()
+            'created_at': datetime.now(ICT).timestamp() # Sử dụng múi giờ ICT
         }
         pending_bookings.append(booking)
         return render_template('payment.html', data=booking)
@@ -65,7 +68,7 @@ def confirm_booking(booking_id):
     for b in pending_bookings:
         if b['id'] == booking_id:
             b['status'] = 'confirmed'
-            b['confirmed_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            b['confirmed_at'] = datetime.now(ICT).strftime("%d/%m/%Y %H:%M:%S") # Sử dụng múi giờ ICT
             confirmed_bookings.append(b)
             pending_bookings.remove(b)
             break
@@ -76,7 +79,7 @@ def check_out(booking_id):
     global confirmed_bookings
     for b in confirmed_bookings:
         if b['id'] == booking_id:
-            b['checkout_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            b['checkout_at'] = datetime.now(ICT).strftime("%d/%m/%Y %H:%M:%S") # Sử dụng múi giờ ICT
             history_bookings.append(b)
             confirmed_bookings.remove(b)
             break
@@ -90,11 +93,19 @@ def webhook_bank():
     for b in pending_bookings:
         if f"DeskNow {b['name']}".lower() in content.lower():
             b['status'] = 'confirmed'
-            b['confirmed_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            b['confirmed_at'] = datetime.now(ICT).strftime("%d/%m/%Y %H:%M:%S") # Sử dụng múi giờ ICT
             confirmed_bookings.append(b)
             pending_bookings.remove(b)
             return jsonify({'status': 'success'}), 200
     return jsonify({'status': 'not found'}), 404
+
+# API tìm kiếm cho Admin
+@app.route('/search-booking', methods=['GET'])
+def search_booking():
+    query = request.args.get('q', '').lower()
+    results = [b for b in (pending_bookings + confirmed_bookings + history_bookings) 
+               if query in b['name'].lower() or query in b.get('phone', '')]
+    return jsonify(results)
 
 @app.route('/cancel-booking/<int:booking_id>')
 def cancel_booking(booking_id):
