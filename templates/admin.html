@@ -12,13 +12,21 @@
     <div class="card p-4 shadow-sm mb-4">
         <table class="table table-hover align-middle">
             <thead class="table-success">
-                <tr><th>Khách</th><th>Bàn</th><th>Action</th></tr>
+                <tr>
+                    <th>Khách</th>
+                    <th>Loại phòng</th>
+                    <th>Mã bàn</th>
+                    <th>Thời gian bắt đầu</th>
+                    <th>Action</th>
+                </tr>
             </thead>
             <tbody>
                 {% for b in confirmed %}
                 <tr>
                     <td>{{ b.name }}</td>
-                    <td>{{ b.table }}</td>
+                    <td>{{ b.room_type|capitalize }} Room</td>
+                    <td>{{ b.table if b.room_type != 'public' else '-' }}</td>
+                    <td>{{ b.confirmed_at }}</td>
                     <td><a href="/check-out/{{ b.id }}" class="btn btn-warning btn-sm">Check-out</a></td>
                 </tr>
                 {% endfor %}
@@ -30,14 +38,20 @@
     <div class="card p-4 shadow-sm">
         <table class="table table-hover align-middle">
             <thead class="table-dark">
-                <tr><th>Khách</th><th>Loại phòng</th><th>Số bàn</th><th>Thời gian</th><th>Action</th></tr>
+                <tr>
+                    <th>Khách</th>
+                    <th>Loại phòng</th>
+                    <th>Mã bàn</th>
+                    <th>Thời gian đặt</th>
+                    <th>Action</th>
+                </tr>
             </thead>
             <tbody>
                 {% for b in pending %}
                 <tr>
                     <td>{{ b.name }}</td>
-                    <td>{{ b.room_type|capitalize }}</td>
-                    <td><strong>{{ b.table }}</strong></td>
+                    <td>{{ b.room_type|capitalize }} Room</td>
+                    <td>{{ b.table if b.room_type != 'public' else '-' }}</td>
                     <td>{{ b.date }} | {{ b.time }}</td>
                     <td><a href="/confirm/{{ b.id }}" class="btn btn-success btn-sm">Duyệt Đơn</a></td>
                 </tr>
