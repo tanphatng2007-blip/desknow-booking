@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = 'desknow_secret_key'
 
-# Lưu trữ dữ liệu trên RAM
+# Lưu trữ dữ liệu
 pending_bookings = []
 confirmed_bookings = []
 history_bookings = [] 
@@ -22,6 +22,7 @@ def index():
         room_type = request.form['room_type']
         date = request.form['date']
         time = request.form['time']
+        hours = int(request.form.get('hours', 1))
         
         available_table = None
         if room_type == 'public':
@@ -37,15 +38,21 @@ def index():
         if not available_table:
             return render_template('full.html')
 
+        # Xử lý thời gian
+        booking_dt = datetime.strptime(f"{date} {time}", '%Y-%m-%d %H:%M')
+        
         booking = {
             'id': len(pending_bookings) + len(confirmed_bookings) + len(history_bookings),
             'name': request.form['name'],
             'email': request.form['email'],
             'date': date,
             'time': time,
+            'hours': hours,
+            'booking_datetime': booking_dt.strftime('%d/%m/%Y %H:%M'),
+            'checkout_expected': (booking_dt + timedelta(hours=hours)).strftime('%d/%m/%Y %H:%M'),
             'table': available_table,
             'room_type': room_type,
-            'price': {'public': 10000, 'private': 15000, 'couple': 25000}[room_type] * int(request.form.get('hours', 1)),
+            'price': {'public': 10000, 'private': 15000, 'couple': 25000}[room_type] * hours,
             'status': 'pending',
             'created_at': datetime.now().timestamp()
         }
