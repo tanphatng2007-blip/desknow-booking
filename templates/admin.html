@@ -1,119 +1,48 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
-from datetime import datetime
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<body class="bg-light p-5">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>⚡ Admin Dashboard</h2>
+        <div>
+            <a href="/history" class="btn btn-secondary">Xem lịch sử</a>
+            <a href="/" class="btn btn-outline-dark">Trang chủ</a>
+        </div>
+    </div>
 
-app = Flask(__name__)
-app.secret_key = 'desknow_secret_key'
-
-# Các danh sách lưu trữ dữ liệu trên RAM
-pending_bookings = []
-confirmed_bookings = []
-history_bookings = [] 
-
-# Cấu trúc phòng theo yêu cầu mới
-rooms = {
-    'private': [f'C{i}' for i in range(1, 20)], # 19 bàn C1-C19
-    'couple': [f'B{i}' for i in range(1, 23)],  # 22 bàn B1-B22
-    'public': ['Public']
-}
-
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        room_type = request.form['room_type']
-        date = request.form['date']
-        time = request.form['time']
-        
-        available_table = None
-        if room_type == 'public':
-            available_table = 'Public'
-        else:
-            for table in rooms[room_type]:
-                is_booked = any(b['table'] == table and b['date'] == date and b['time'] == time 
-                                for b in confirmed_bookings + pending_bookings)
-                if not is_booked:
-                    available_table = table
-                    break
-        
-        if not available_table:
-            return render_template('full.html')
-
-        booking = {
-            'id': len(pending_bookings) + len(confirmed_bookings) + len(history_bookings),
-            'name': request.form['name'],
-            'email': request.form['email'],
-            'date': date,
-            'time': time,
-            'table': available_table,
-            'room_type': room_type,
-            'price': {'public': 10000, 'private': 15000, 'couple': 25000}[room_type] * int(request.form.get('hours', 1)),
-            'status': 'pending',
-            'created_at': datetime.now().timestamp()
-        }
-        pending_bookings.append(booking)
-        return render_template('payment.html', data=booking)
-    return render_template('index.html')
-
-@app.route('/confirm/<int:booking_id>')
-def confirm_booking(booking_id):
-    for b in pending_bookings:
-        if b['id'] == booking_id:
-            b['status'] = 'confirmed'
-            b['confirmed_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            confirmed_bookings.append(b)
-            pending_bookings.remove(b)
-            break
-    return redirect(url_for('admin'))
-
-@app.route('/check-out/<int:booking_id>')
-def check_out(booking_id):
-    global confirmed_bookings
-    for b in confirmed_bookings:
-        if b['id'] == booking_id:
-            history_bookings.append(b)
-            confirmed_bookings.remove(b)
-            break
-    return redirect(url_for('admin'))
-
-@app.route('/webhook-bank', methods=['POST'])
-def webhook_bank():
-    data = request.json
-    if not data: return jsonify({'status': 'error'}), 400
-    content = data.get('content', '')
-    for b in pending_bookings:
-        if f"DeskNow {b['name']}".lower() in content.lower():
-            b['status'] = 'confirmed'
-            b['confirmed_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            confirmed_bookings.append(b)
-            pending_bookings.remove(b)
-            return jsonify({'status': 'success'}), 200
-    return jsonify({'status': 'not found'}), 404
-
-@app.route('/cancel-booking/<int:booking_id>')
-def cancel_booking(booking_id):
-    global pending_bookings
-    pending_bookings = [b for b in pending_bookings if b['id'] != booking_id]
-    return jsonify({'status': 'cancelled'})
-
-@app.route('/admin')
-def admin():
-    return render_template('admin.html', pending=pending_bookings, confirmed=confirmed_bookings)
-
-@app.route('/history')
-def history():
-    return render_template('history.html', history=history_bookings)
-
-@app.route('/check-status/<int:booking_id>')
-def check_status(booking_id):
-    for b in pending_bookings:
-        if b['id'] == booking_id: return jsonify({'status': 'pending'})
-    for b in confirmed_bookings:
-        if b['id'] == booking_id: return jsonify({'status': 'confirmed'})
-    return jsonify({'status': 'none'})
-
-@app.route('/success')
-def success():
-    booking = confirmed_bookings[-1] if confirmed_bookings else None
-    return render_template('success.html', data=booking)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    <h4 class="mt-4">Đơn đã xác nhận (Đang sử dụng)</h4>
+    <div class="card p-4 shadow-sm mb-4">
+        <table class="table table-hover align-middle">
+            <thead class="table-success">
+                <tr><th>Khách</th><th>Bàn</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                {% for b in confirmed %}
+                <tr>
+                    <td>{{ b.name }}</td>
+                    <td>{{ b.table }}</td>
+                    <td><a href="/check-out/{{ b.id }}" class="btn btn-warning btn-sm">Check-out</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <h4>Đơn chờ duyệt</h4>
+    <div class="card p-4 shadow-sm">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr><th>Khách</th><th>Loại phòng</th><th>Số bàn</th><th>Thời gian</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                {% for b in pending %}
+                <tr>
+                    <td>{{ b.name }}</td>
+                    <td>{{ b.room_type|capitalize }}</td>
+                    <td><strong>{{ b.table }}</strong></td>
+                    <td>{{ b.date }} | {{ b.time }}</td>
+                    <td><a href="/confirm/{{ b.id }}" class="btn btn-success btn-sm">Duyệt Đơn</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
