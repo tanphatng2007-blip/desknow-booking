@@ -2,10 +2,13 @@
 <body class="bg-light p-5">
     <h2>📜 Lịch sử giao dịch</h2>
     <table class="table table-striped mt-3 bg-white">
-        <thead><tr><th>Khách</th><th>Bàn</th><th>Thời gian</th><th>Trạng thái</th></tr></thead>
+        <thead><tr><th>Khách</th><th>Bàn</th><th>Thời gian đặt</th><th>Thời gian thanh toán</th><th>Trạng thái</th></tr></thead>
         <tbody>
             {% for b in history %}
-            <tr><td>{{ b.name }}</td><td>{{ b.table }}</td><td>{{ b.date }}</td><td><span class="badge bg-success">Đã hoàn thành</span></td></tr>
+            <tr>
+                <td>{{ b.name }}</td><td>{{ b.table }}</td><td>{{ b.date }}</td>
+                <td>{{ b.confirmed_at }}</td><td><span class="badge bg-success">Đã hoàn thành</span></td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
