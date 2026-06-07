@@ -4,12 +4,12 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'desknow_secret_key'
 
-# Lưu trữ dữ liệu
+# Lưu trữ dữ liệu trên RAM
 pending_bookings = []
 confirmed_bookings = []
 history_bookings = [] 
 
-# Cấu trúc phòng theo yêu cầu: Private C1-C19, Couple B1-B22
+# Cấu trúc phòng
 rooms = {
     'private': [f'C{i}' for i in range(1, 20)],
     'couple': [f'B{i}' for i in range(1, 23)],
