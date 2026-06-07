@@ -23,7 +23,14 @@
     </div>
 
     <script>
-        // Kiểm tra trạng thái đơn hàng này từ Admin mỗi 1.5 giây
+        // Tự động thoát về trang chủ sau 5 phút (300,000 miligiây)
+        setTimeout(() => {
+            fetch('/cancel-booking/{{ data.id }}');
+            alert("Đã hết thời gian thanh toán, hệ thống sẽ quay lại trang chủ.");
+            window.location.href = "/";
+        }, 300000);
+
+        // Kiểm tra trạng thái đơn hàng mỗi 1.5 giây
         setInterval(() => {
             fetch('/check-status/{{ data.id }}')
                 .then(r => r.json())
