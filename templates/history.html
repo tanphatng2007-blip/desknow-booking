@@ -6,6 +6,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>Khách</th>
+                    <th>Loại phòng</th>
                     <th>Mã bàn</th>
                     <th>Thời gian bắt đầu</th>
                     <th>Thời gian Checkout</th>
@@ -17,6 +18,7 @@
                 {% for b in history %}
                 <tr>
                     <td>{{ b.name }}</td>
+                    <td>{{ b.room_type|capitalize }} Room</td>
                     <td>{{ b.table if b.room_type != 'public' else '-' }}</td>
                     <td>{{ b.confirmed_at }}</td>
                     <td>{{ b.checkout_at }}</td>
