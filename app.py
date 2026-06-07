@@ -1,15 +1,18 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'desknow_secret_key'
 
+# Các danh sách lưu trữ dữ liệu trên RAM
 pending_bookings = []
 confirmed_bookings = []
+history_bookings = [] 
 
+# Cấu trúc phòng theo yêu cầu mới
 rooms = {
-    'private': [f'C{i}' for i in range(1, 20)],
-    'couple': [f'B{i}' for i in range(1, 23)],
+    'private': [f'C{i}' for i in range(1, 20)], # 19 bàn C1-C19
+    'couple': [f'B{i}' for i in range(1, 23)],  # 22 bàn B1-B22
     'public': ['Public']
 }
 
@@ -31,10 +34,11 @@ def index():
                     available_table = table
                     break
         
-        if not available_table: return render_template('full.html')
+        if not available_table:
+            return render_template('full.html')
 
         booking = {
-            'id': len(pending_bookings) + len(confirmed_bookings),
+            'id': len(pending_bookings) + len(confirmed_bookings) + len(history_bookings),
             'name': request.form['name'],
             'email': request.form['email'],
             'date': date,
@@ -58,7 +62,17 @@ def confirm_booking(booking_id):
             confirmed_bookings.append(b)
             pending_bookings.remove(b)
             break
-    return "Đã duyệt đơn! <a href='/admin'>Quay lại</a>"
+    return redirect(url_for('admin'))
+
+@app.route('/check-out/<int:booking_id>')
+def check_out(booking_id):
+    global confirmed_bookings
+    for b in confirmed_bookings:
+        if b['id'] == booking_id:
+            history_bookings.append(b)
+            confirmed_bookings.remove(b)
+            break
+    return redirect(url_for('admin'))
 
 @app.route('/webhook-bank', methods=['POST'])
 def webhook_bank():
@@ -82,12 +96,11 @@ def cancel_booking(booking_id):
 
 @app.route('/admin')
 def admin():
-    # Hiển thị cả danh sách chờ và danh sách đã xác nhận
-    return render_template('admin.html', bookings=pending_bookings + confirmed_bookings)
+    return render_template('admin.html', pending=pending_bookings, confirmed=confirmed_bookings)
 
 @app.route('/history')
 def history():
-    return render_template('history.html', history=confirmed_bookings)
+    return render_template('history.html', history=history_bookings)
 
 @app.route('/check-status/<int:booking_id>')
 def check_status(booking_id):
