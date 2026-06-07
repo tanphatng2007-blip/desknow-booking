@@ -4,15 +4,15 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'desknow_secret_key'
 
-# Các danh sách lưu trữ dữ liệu trên RAM
+# Lưu trữ dữ liệu
 pending_bookings = []
 confirmed_bookings = []
 history_bookings = [] 
 
-# Cấu trúc phòng theo yêu cầu mới
+# Cấu trúc phòng theo yêu cầu: Private C1-C19, Couple B1-B22
 rooms = {
-    'private': [f'C{i}' for i in range(1, 20)], # 19 bàn C1-C19
-    'couple': [f'B{i}' for i in range(1, 23)],  # 22 bàn B1-B22
+    'private': [f'C{i}' for i in range(1, 20)],
+    'couple': [f'B{i}' for i in range(1, 23)],
     'public': ['Public']
 }
 
@@ -69,6 +69,7 @@ def check_out(booking_id):
     global confirmed_bookings
     for b in confirmed_bookings:
         if b['id'] == booking_id:
+            b['checkout_at'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             history_bookings.append(b)
             confirmed_bookings.remove(b)
             break
