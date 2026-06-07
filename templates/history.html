@@ -9,6 +9,7 @@
                     <th>Mã bàn</th>
                     <th>Thời gian bắt đầu</th>
                     <th>Thời gian Checkout</th>
+                    <th>Thời gian thanh toán</th>
                     <th>Trạng thái</th>
                 </tr>
             </thead>
@@ -19,6 +20,7 @@
                     <td>{{ b.table if b.room_type != 'public' else '-' }}</td>
                     <td>{{ b.confirmed_at }}</td>
                     <td>{{ b.checkout_at }}</td>
+                    <td>{{ b.confirmed_at }}</td>
                     <td><span class="badge bg-success">Đã hoàn thành</span></td>
                 </tr>
                 {% endfor %}
